@@ -11,25 +11,31 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r cars}
-summary(cars)
+```{r StartingItems, message=FALSE, warning = FALSE}
+library(mdsr)
+library(RMySQL)
+library(tidyverse)
+library(dplyr)
 ```
 
-## Including Plots
+```{r SQLData, message=FALSE, warning = FALSE}
+library(RMySQL)
+db <- dbConnect(MySQL(), 
+                host = "scidb.smith.edu", 
+                user = "mth292", 
+                password = "RememberPi", 
+                dbname = "nyctaxi")
 
-You can also embed plots, for example:
+class(db)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+```{r ActiveCode, message=FALSE, warning = FALSE}
+db %>%
+  dbGetQuery("SELECT *
+             FROM nyctaxi;")
+```
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
 ]
