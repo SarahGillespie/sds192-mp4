@@ -25,7 +25,7 @@ db <- dbConnect(MySQL(),
                 host = "scidb.smith.edu", 
                 user = "mth292", 
                 password = "RememberPi", 
-                dbname = "nyctaxi")
+                dbname = "citibike")
 
 class(db)
 
@@ -33,8 +33,17 @@ class(db)
 
 ```{r ActiveCode, message=FALSE, warning = FALSE}
 db %>%
-  dbGetQuery("SELECT *
-             FROM nyctaxi;")
+  dbGetQuery("SHOW TABLES;")
+```
+
+#### Questions: let's go at this from a business perspective. Are most bike riders customers or subscribers, age, gender. How can we get more people to ride the bikes? What geographic location do the bikes start and end?
+
+```{r ActiveCode, message=FALSE, warning = FALSE}
+
+db %>%
+  dbGetQuery("SELECT * 
+             FROM trips
+             LIMIT 0, 20;")
 ```
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
