@@ -30,20 +30,54 @@ db <- dbConnect(MySQL(),
 class(db)
 
 ```
+### Notes
+### Mimic the Wonder Woman article
+# i really like the station_summary that shows the most popular stations
+# we could count the number of rides total and by station.
 
+#trip_summary just shows an increasing number of people are using the bikes. Heartening but not particularly insightful.
+#try for a single bike then see where it goes
+# somebody else did analysis on this but using Python: https://towardsdatascience.com/citi-bike-2017-analysis-efd298e6c22c
 ```{r ActiveCode, message=FALSE, warning = FALSE}
 db %>%
   dbGetQuery("SHOW TABLES;")
+
+db %>%
+  dbGetQuery("SELECT * 
+             FROM station_months
+             LIMIT 0, 100;")
+
+db %>%
+  dbGetQuery("SELECT * 
+             FROM station_summary
+             LIMIT 0, 100;")
+db %>%
+  dbGetQuery("SELECT * 
+             FROM trip_summary
+             LIMIT 0, 20;")
+
+db %>%
+  dbGetQuery("SELECT * 
+              FROM trips
+              LIMIT 0, 200;")
+
+```
+
+```{r ActiveCode, message=FALSE, warning = FALSE}
+
 ```
 
 #### Questions: let's go at this from a business perspective. Are most bike riders customers or subscribers, age, gender. How can we get more people to ride the bikes? What geographic location do the bikes start and end?
 
 ```{r ActiveCode, message=FALSE, warning = FALSE}
 
-db %>%
-  dbGetQuery("SELECT * 
-             FROM trips
-             LIMIT 0, 20;")
+joinedTable <- db %>%
+  dbGetQuery("SELECT
+                station_months.station_id, station_months.name, station_months.num_starts, station_months.num_stops, station_summary.num_months, station_summary.num_starts, station_summary.num_stops
+              FROM
+                station_months
+                  LEFT JOIN
+                station_summary ON station_months.station_id = station_summary.station_id;")
 ```
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
