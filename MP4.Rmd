@@ -17,6 +17,7 @@ library(mdsr)
 library(RMySQL)
 library(tidyverse)
 library(dplyr)
+library(ggplot2)
 ```
 
 ```{r SQLData, message=FALSE, warning = FALSE}
@@ -73,11 +74,16 @@ db %>%
 
 joinedTable <- db %>%
   dbGetQuery("SELECT
-                station_months.station_id, station_months.name, station_months.num_starts, station_months.num_stops, station_summary.num_months, station_summary.num_starts, station_summary.num_stops
+                station_months.station_id AS smonID, station_months.name AS smonName, station_months.num_starts AS smonNumStarts, station_months.num_stops AS smonNumStops, station_summary.num_months AS ssumNumMonths, station_summary.num_starts AS ssumNumStarts, station_summary.num_stops AS ssumNumStops
               FROM
                 station_months
                   LEFT JOIN
                 station_summary ON station_months.station_id = station_summary.station_id;")
+```
+
+```{r ActiveCode2, message=FALSE, warning = FALSE}
+ggplot(joinedTable, aes(x = station_summary.num_months, y = num_starts)) + 
+  geom_point()
 ```
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
