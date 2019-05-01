@@ -21,6 +21,10 @@ library(ggplot2)
 library(GGally)
 library(network)
 library(sna)
+library(sf)
+library(leaflet)
+library(lwgeom)
+library(wordcountaddin)
 ```
 
 #package required for network graphic: "GGally". Dependencies: "network", "sna"
@@ -96,11 +100,34 @@ joinedTable <- db %>%
                 station_summary ON station_months.station_id = station_summary.station_id;")
 ```
 
-```{r ActiveCode2, message=FALSE, warning = FALSE}
+```{r plot, message=FALSE, warning = FALSE}
 ggplot(joinedTable, aes(x = ssumNumMonths, y = ssumNumStarts, group = smonName)) + 
   geom_col() +
   geom_text(data=subset(joinedTable, ssumNumStarts > 150000),
             aes(ssumNumMonths, y = ssumNumStarts,label= smonName))
+
+# the above isn't right but I can't tell how its wrong
+```
+
+
+```{r map, message=FALSE, warning = FALSE}
+
+bikeStations <- db %>%
+  dbGetQuery("SELECT * 
+             FROM station_summary
+             LIMIT 0, 100;")
+
+
+new_campsite<- tribble(
+  ~name, ~lat, ~lon,
+  "New campsite 1", 42.448483, -72.675119,
+  "New campsite 2", 42.447339, -72.675275)
+
+leaflet(bikeStations) %>%
+  addTiles() %>%
+  addCircles(~lon, ~lat, popup=bikeStations$type, weight = 3, radius=40, 
+                 color="#000000", stroke = TRUE, fillOpacity = 0.8)
+
 ```
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
