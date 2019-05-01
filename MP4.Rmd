@@ -18,7 +18,12 @@ library(RMySQL)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
+library(GGally)
+library(network)
+library(sna)
 ```
+
+#package required for network graphic: "GGally". Dependencies: "network", "sna"
 
 ```{r SQLData, message=FALSE, warning = FALSE}
 library(RMySQL)
@@ -65,7 +70,17 @@ db %>%
 ```
 
 ```{r ActiveCode, message=FALSE, warning = FALSE}
+#network of start and ending destinations by user type
+#documentation on networks: https://briatte.github.io/ggnet/ , #https://cran.r-project.org/web/packages/ggnetwork/vignettes/ggnetwork.html
 
+tripsTable <- db %>%
+  dbGetQuery("SELECT * 
+              FROM trips
+              LIMIT 0, 200;")
+
+network(tripsTable)
+
+#color = user_type
 ```
 
 #### Questions: let's go at this from a business perspective. Are most bike riders customers or subscribers, age, gender. How can we get more people to ride the bikes? What geographic location do the bikes start and end?
@@ -82,8 +97,10 @@ joinedTable <- db %>%
 ```
 
 ```{r ActiveCode2, message=FALSE, warning = FALSE}
-ggplot(joinedTable, aes(x = station_summary.num_months, y = num_starts)) + 
-  geom_point()
+ggplot(joinedTable, aes(x = ssumNumMonths, y = ssumNumStarts, group = smonName)) + 
+  geom_point() +
+  geom_text(data=subset(joinedTable, ssumNumStarts > 150000),
+            aes(ssumNumMonths, y = ssumNumStarts,label= smonName))
 ```
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
