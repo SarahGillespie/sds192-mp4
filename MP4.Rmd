@@ -98,7 +98,7 @@ joinedTable <- db %>%
 
 ```{r ActiveCode2, message=FALSE, warning = FALSE}
 ggplot(joinedTable, aes(x = ssumNumMonths, y = ssumNumStarts, group = smonName)) + 
-  geom_point() +
+  geom_col() +
   geom_text(data=subset(joinedTable, ssumNumStarts > 150000),
             aes(ssumNumMonths, y = ssumNumStarts,label= smonName))
 ```
