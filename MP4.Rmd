@@ -139,14 +139,14 @@ bike_crashes_tidy <- nyc_crashes_bike %>%
 
 
 ```{r icons, message = FALSE, warning = FALSE}
-bike_icon <-makeIcon("bike_icon.png")
+bike_icon <- icons(iconUrl = "bike_icon.png", 24, 24)
 ```
 
 
 ```{r LeafletMap, message = FALSE, warning = FALSE}
 leaflet(bikeStations) %>%
   addTiles() %>%
-  addMarkers(~bikeStations$lon, ~bikeStations$lat, popup = bike_icon) %>%
+  addMarkers(~bikeStations$lon, ~bikeStations$lat, icon = bike_icon) %>%
   addCircles(~bike_crashes_tidy$LONGITUDE, bike_crashes_tidy$LATITUDE, weight = 2, radius = 40,
              fill = ~bike_crashes_tidy$bike_deaths, color = 'red', stroke = TRUE, fillOpacity = 1)
 ```
