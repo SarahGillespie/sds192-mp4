@@ -49,7 +49,7 @@ class(db)
 #trip_summary just shows an increasing number of people are using the bikes. Heartening but not particularly insightful.
 #try for a single bike then see where it goes
 # somebody else did analysis on this but using Python: https://towardsdatascience.com/citi-bike-2017-analysis-efd298e6c22c
-```{r ActiveCode 2, message=FALSE, warning = FALSE}
+```{r lookAtTheTables, message=FALSE, warning = FALSE}
 db %>%
   dbGetQuery("SHOW TABLES;")
 
@@ -64,17 +64,19 @@ db %>%
              LIMIT 0, 100;")
 db %>%
   dbGetQuery("SELECT * 
-             FROM trip_summary
-             LIMIT 0, 20;")
-
-db %>%
-  dbGetQuery("SELECT * 
               FROM trips
               LIMIT 0, 200;")
 
+bikeStations <- db %>%
+  dbGetQuery("SELECT *
+             FROM station_summary
+             LIMIT 1, 100;")
+
+bikeStations
+
 ```
 
-```{r ActiveCode 3, message=FALSE, warning = FALSE}
+```{r UseNetwork, message=FALSE, warning = FALSE}
 #network of start and ending destinations by user type
 #documentation on networks: https://briatte.github.io/ggnet/ , #https://cran.r-project.org/web/packages/ggnetwork/vignettes/ggnetwork.html
 
@@ -85,12 +87,11 @@ tripsTable <- db %>%
 
 network(tripsTable)
 
-#color = user_type
 ```
 
 #### Questions: let's go at this from a business perspective. Are most bike riders customers or subscribers, age, gender. How can we get more people to ride the bikes? What geographic location do the bikes start and end?
 
-```{r ActiveCode 1, message=FALSE, warning = FALSE}
+```{r joinSQLtables, message=FALSE, warning = FALSE}
 
 joinedTable <- db %>%
   dbGetQuery("SELECT
@@ -101,7 +102,7 @@ joinedTable <- db %>%
                 station_summary ON station_months.station_id = station_summary.station_id;")
 ```
 
-```{r plot, message=FALSE, warning = FALSE}
+```{r makeAGGPLOT, message=FALSE, warning = FALSE}
 ggplot(joinedTable, aes(x = ssumNumMonths, y = ssumNumStarts, group = smonName)) + 
   geom_col() +
   geom_text(data=subset(joinedTable, ssumNumStarts > 150000),
@@ -110,30 +111,25 @@ ggplot(joinedTable, aes(x = ssumNumMonths, y = ssumNumStarts, group = smonName))
 # the above isn't right but I can't tell how its wrong
 ```
 
-```{r import bike stations data, message=FALSE, warning = FALSE}
 
-bikeStations <- db %>%
-  dbGetQuery("SELECT * 
-             FROM station_summary
-             LIMIT 0, 100;")
-```
-
-```{r car crash data import, message = FALSE, warning = FALSE}
+```{r importCarCrashData, message = FALSE, warning = FALSE}
 nyc_crashes <- read_csv("NYPD_Motor_Vehicle_Collisions.csv")
+
+#this CSV should be in the zip file of the project. It will not work if it is not in the zip file.
 ```
 
-```{r rename stupidly named columns, message = FALSE, warning = FALSE}
+```{r renameColumns, message = FALSE, warning = FALSE}
 colnames(nyc_crashes)[15] <- "bike_injuries"
 colnames(nyc_crashes)[16] <- "bike_deaths"
 ```
 
-```{r filter for bike crashes only, message = FALSE, warning = FALSE}
+```{r FilterForBikeCrashOnly, message = FALSE, warning = FALSE}
 nyc_crashes_bike <- nyc_crashes %>%
   filter(bike_injuries > 0 | bike_deaths > 0) 
 ```
 
 
-```{r wrangle and dateify crash data, message = FALSE, warning = FALSE}
+```{r GetDatesForCrashData, message = FALSE, warning = FALSE}
 bike_crashes_tidy <- nyc_crashes_bike %>%
   dplyr::select(DATE, LONGITUDE, LATITUDE, bike_injuries, bike_deaths) %>%
   dplyr::mutate(FullDate = mdy(DATE)) %>%
@@ -142,16 +138,17 @@ bike_crashes_tidy <- nyc_crashes_bike %>%
 ```
 
 
-```{r make icons, message = FALSE, warning = FALSE}
-bike_icon <-makeIcon("bike_icon.svg")
+```{r icons, message = FALSE, warning = FALSE}
+bike_icon <-makeIcon("bike_icon.png")
 ```
 
-```{r map, message = FALSE, warning = FALSE}
+
+```{r LeafletMap, message = FALSE, warning = FALSE}
 leaflet(bikeStations) %>%
   addTiles() %>%
-  addMarkers(~lon, ~lat, icon = bike_icon) %>%
-  addCircles(~bike_crashes_tidy$LONGITUDE, bike_crashes_tidy$LATITUDE, weight = 1, radius = 40,
-             fill = ~bike_crashes_tidy$bike_deaths, stroke = TRUE, fillOpacity = 1)
+  addMarkers(~bikeStations$lon, ~bikeStations$lat, popup = bike_icon) %>%
+  addCircles(~bike_crashes_tidy$LONGITUDE, bike_crashes_tidy$LATITUDE, weight = 2, radius = 40,
+             fill = ~bike_crashes_tidy$bike_deaths, color = 'red', stroke = TRUE, fillOpacity = 1)
 ```
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
