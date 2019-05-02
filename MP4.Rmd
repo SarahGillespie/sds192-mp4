@@ -1,6 +1,6 @@
 ---
 title: "MP4"
-author: "Sarah Gillespie, Berry Williams, Eva Putman"
+author: "Sarah Gillespie, Berry Williams, Eva Putnam"
 date: "2019-05-04"
 output: 
   html_document:
@@ -25,6 +25,7 @@ library(sf)
 library(leaflet)
 library(lwgeom)
 library(wordcountaddin)
+library(lubridate)
 ```
 
 #package required for network graphic: "GGally". Dependencies: "network", "sna"
@@ -48,7 +49,7 @@ class(db)
 #trip_summary just shows an increasing number of people are using the bikes. Heartening but not particularly insightful.
 #try for a single bike then see where it goes
 # somebody else did analysis on this but using Python: https://towardsdatascience.com/citi-bike-2017-analysis-efd298e6c22c
-```{r ActiveCode, message=FALSE, warning = FALSE}
+```{r ActiveCode 2, message=FALSE, warning = FALSE}
 db %>%
   dbGetQuery("SHOW TABLES;")
 
@@ -73,7 +74,7 @@ db %>%
 
 ```
 
-```{r ActiveCode, message=FALSE, warning = FALSE}
+```{r ActiveCode 3, message=FALSE, warning = FALSE}
 #network of start and ending destinations by user type
 #documentation on networks: https://briatte.github.io/ggnet/ , #https://cran.r-project.org/web/packages/ggnetwork/vignettes/ggnetwork.html
 
@@ -89,7 +90,7 @@ network(tripsTable)
 
 #### Questions: let's go at this from a business perspective. Are most bike riders customers or subscribers, age, gender. How can we get more people to ride the bikes? What geographic location do the bikes start and end?
 
-```{r ActiveCode, message=FALSE, warning = FALSE}
+```{r ActiveCode 1, message=FALSE, warning = FALSE}
 
 joinedTable <- db %>%
   dbGetQuery("SELECT
@@ -109,25 +110,48 @@ ggplot(joinedTable, aes(x = ssumNumMonths, y = ssumNumStarts, group = smonName))
 # the above isn't right but I can't tell how its wrong
 ```
 
-
-```{r map, message=FALSE, warning = FALSE}
+```{r import bike stations data, message=FALSE, warning = FALSE}
 
 bikeStations <- db %>%
   dbGetQuery("SELECT * 
              FROM station_summary
              LIMIT 0, 100;")
+```
+
+```{r car crash data import, message = FALSE, warning = FALSE}
+nyc_crashes <- read_csv("NYPD_Motor_Vehicle_Collisions.csv")
+```
+
+```{r rename stupidly named columns, message = FALSE, warning = FALSE}
+colnames(nyc_crashes)[15] <- "bike_injuries"
+colnames(nyc_crashes)[16] <- "bike_deaths"
+```
+
+```{r filter for bike crashes only, message = FALSE, warning = FALSE}
+nyc_crashes_bike <- nyc_crashes %>%
+  filter(bike_injuries > 0 | bike_deaths > 0) 
+```
 
 
-new_campsite<- tribble(
-  ~name, ~lat, ~lon,
-  "New campsite 1", 42.448483, -72.675119,
-  "New campsite 2", 42.447339, -72.675275)
+```{r wrangle and dateify crash data, message = FALSE, warning = FALSE}
+bike_crashes_tidy <- nyc_crashes_bike %>%
+  dplyr::select(DATE, LONGITUDE, LATITUDE, bike_injuries, bike_deaths) %>%
+  dplyr::mutate(FullDate = mdy(DATE)) %>%
+  separate(FullDate, sep="-", into = c("year", "month", "day")) %>%
+  filter(year == 2019, LONGITUDE != 0, LATITUDE != 0)
+```
 
+
+```{r make icons, message = FALSE, warning = FALSE}
+bike_icon <-makeIcon("bike_icon.svg")
+```
+
+```{r map, message = FALSE, warning = FALSE}
 leaflet(bikeStations) %>%
   addTiles() %>%
-  addCircles(~lon, ~lat, popup=bikeStations$type, weight = 3, radius=40, 
-                 color="#000000", stroke = TRUE, fillOpacity = 0.8)
-
+  addMarkers(~lon, ~lat, icon = bike_icon) %>%
+  addCircles(~bike_crashes_tidy$LONGITUDE, bike_crashes_tidy$LATITUDE, weight = 1, radius = 40,
+             fill = ~bike_crashes_tidy$bike_deaths, stroke = TRUE, fillOpacity = 1)
 ```
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
