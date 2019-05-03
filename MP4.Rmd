@@ -139,13 +139,22 @@ nyc_crashes <- read_csv("NYPD_Motor_Vehicle_Collisions.csv")
 ```
 
 ```{r renameColumns, message = FALSE, warning = FALSE}
+colnames(nyc_crashes)[4] <- "zip_code"
+colnames(nyc_crashes)[8] <- "street_name"
+colnames(nyc_crashes)[9] <- "cross_street_name"
+colnames(nyc_crashes)[10] <- "off_street_name"
 colnames(nyc_crashes)[15] <- "bike_injuries"
 colnames(nyc_crashes)[16] <- "bike_deaths"
+colnames(nyc_crashes)[11] <- "pers_inj"
+colnames(nyc_crashes)[12] <- "pers_killed"
+colnames(nyc_crashes)[13] <- "ped_inj"
+colnames(nyc_crashes)[14] <- "ped_killed"
 ```
 
 ```{r FilterForBikeCrashOnly, message = FALSE, warning = FALSE}
 nyc_crashes_bike <- nyc_crashes %>%
   filter(bike_injuries > 0 | bike_deaths > 0) 
+  
 ```
 
 
@@ -173,10 +182,9 @@ leaflet(bikeStations) %>%
 ```
 
 
-
 ```{r tweets, message = FALSE, warning = FALSE}
 citibike <- search_tweets("citibike nyc", n = 1000, include_rts = FALSE)
-# you cab only collect a handful of tweets but it refreshes every 15 minutes. DON'T ALWAYS RUN. you might need a twitter account of mine doesn't let you do it
+# you can only collect a handful of tweets but it refreshes every 15 minutes. DON'T ALWAYS RUN. you might need a twitter account of mine doesn't let you do it
 ```
 
 ```{r wrangleYeehaw, message = FALSE, warning = FALSE}
