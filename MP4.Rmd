@@ -26,6 +26,9 @@ library(leaflet)
 library(lwgeom)
 library(wordcountaddin)
 library(lubridate)
+library(rtweet)
+library(RColorBrewer)
+```
 ```
 
 #package required for network graphic: "GGally". Dependencies: "network", "sna"
@@ -55,16 +58,13 @@ db %>%
   dbGetQuery("SELECT * 
              FROM station_summary
              LIMIT 0, 100;")
-db %>%
-  dbGetQuery("SELECT * 
-             FROM trip_summary
-             LIMIT 0, 20;")
 
 bikeStations <- db %>%
   dbGetQuery("SELECT *
              FROM station_summary;")
 
-bikeStations
+bikeStations <- bikeStations %>%
+  filter(num_months > 8)
 
 ```
 
@@ -160,7 +160,7 @@ bike_crashes_tidy <- nyc_crashes_bike %>%
 
 
 ```{r icons, message = FALSE, warning = FALSE}
-bike_icon <- icons(iconUrl = "bike_icon.png", 30, 30)
+bike_icon <- icons(iconUrl = "bike_icon.png", 15, 15)
 ```
 
 
@@ -171,6 +171,35 @@ leaflet(bikeStations) %>%
   addCircles(~bike_crashes_tidy$LONGITUDE, bike_crashes_tidy$LATITUDE, weight = 1.5, radius = 20,
              fill = ~bike_crashes_tidy$bike_deaths, color = 'red', stroke = TRUE, fillOpacity = 1)
 ```
+
+
+
+```{r tweets, message = FALSE, warning = FALSE}
+citibike <- search_tweets("citibike nyc", n = 1000, include_rts = FALSE)
+# you cab only collect a handful of tweets but it refreshes every 15 minutes. DON'T ALWAYS RUN. you might need a twitter account of mine doesn't let you do it
+```
+
+```{r wrangleYeehaw, message = FALSE, warning = FALSE}
+citibikeSimple <- citibike %>%
+  select(status_id, screen_name, created_at, text, display_text_width, favorite_count, retweet_count, hashtags) %>%
+  mutate(month = month(created_at, label = TRUE)) %>%
+  mutate(day = day(created_at)) %>%
+  mutate(hour = hour(created_at))
+
+```
+
+```{r plotTweets, message = FALSE, warning = FALSE}
+ggplot(citibikeSimple, aes(x = hour, y = favorite_count, color = display_text_width)) + 
+  geom_point() + 
+  scale_color_gradient(low="blue", high="red") +
+  theme_classic()
+
+#this shows how many likes that each tweet recieved. Most likes occured during the rush hour of 4 to 8 pm
+
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
 ]
