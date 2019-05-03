@@ -49,17 +49,20 @@ db %>%
 db %>%
   dbGetQuery("SELECT * 
              FROM station_months
-             LIMIT 0, 6;")
+             LIMIT 0, 100;")
 
 db %>%
   dbGetQuery("SELECT * 
-              FROM trips
-              LIMIT 0, 6;")
+             FROM station_summary
+             LIMIT 0, 100;")
+db %>%
+  dbGetQuery("SELECT * 
+             FROM trip_summary
+             LIMIT 0, 20;")
 
 bikeStations <- db %>%
   dbGetQuery("SELECT *
-             FROM station_summary
-             LIMIT 1, 6;")
+             FROM station_summary;")
 
 bikeStations
 
@@ -72,7 +75,7 @@ bikeStations
 tripsTable <- db %>%
   dbGetQuery("SELECT * 
               FROM trips
-              LIMIT 0, 200;")
+              LIMIT 0, 100;")
 
 network(tripsTable)
 
