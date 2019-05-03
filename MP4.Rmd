@@ -41,14 +41,7 @@ db <- dbConnect(MySQL(),
 class(db)
 
 ```
-### Notes
-### Mimic the Wonder Woman article
-# i really like the station_summary that shows the most popular stations
-# we could count the number of rides total and by station.
-
-#trip_summary just shows an increasing number of people are using the bikes. Heartening but not particularly insightful.
-#try for a single bike then see where it goes
-# somebody else did analysis on this but using Python: https://towardsdatascience.com/citi-bike-2017-analysis-efd298e6c22c
+### Text
 ```{r lookAtTheTables, message=FALSE, warning = FALSE}
 db %>%
   dbGetQuery("SHOW TABLES;")
@@ -56,21 +49,17 @@ db %>%
 db %>%
   dbGetQuery("SELECT * 
              FROM station_months
-             LIMIT 0, 100;")
+             LIMIT 0, 6;")
 
 db %>%
   dbGetQuery("SELECT * 
-             FROM station_summary
-             LIMIT 0, 100;")
-db %>%
-  dbGetQuery("SELECT * 
               FROM trips
-              LIMIT 0, 200;")
+              LIMIT 0, 6;")
 
 bikeStations <- db %>%
   dbGetQuery("SELECT *
              FROM station_summary
-             LIMIT 1, 100;")
+             LIMIT 1, 6;")
 
 bikeStations
 
@@ -102,13 +91,41 @@ joinedTable <- db %>%
                 station_summary ON station_months.station_id = station_summary.station_id;")
 ```
 
-```{r makeAGGPLOT, message=FALSE, warning = FALSE}
-ggplot(joinedTable, aes(x = ssumNumMonths, y = ssumNumStarts, group = smonName)) + 
-  geom_col() +
-  geom_text(data=subset(joinedTable, ssumNumStarts > 150000),
-            aes(ssumNumMonths, y = ssumNumStarts,label= smonName))
+```{r ggplotViaDplyr, message=FALSE, warning = FALSE}
+joinedTableSimple <- db %>%
+  dbGetQuery("SELECT
+                station_months.station_id AS smonID, station_months.name AS smonName, station_summary.num_months AS ssumNumMonths, station_summary.num_starts AS ssumNumStarts, station_summary.num_stops AS ssumNumStops
+              FROM
+                station_months
+                  LEFT JOIN
+                station_summary ON station_months.station_id = station_summary.station_id;")
 
-# the above isn't right but I can't tell how its wrong
+joinedTableUniques <- joinedTableSimple %>%
+  distinct()
+
+joinedTableUniques <- joinedTableUniques %>%
+  mutate(AverageMonthyUsers = (ssumNumStarts/ssumNumMonths)) %>%
+  filter(ssumNumMonths == "12") %>%
+  mutate(TotalCitiStarts = sum(ssumNumStarts)) %>%
+  mutate(PercentOfTotal = (ssumNumStarts / TotalCitiStarts)) %>%
+  arrange((desc(PercentOfTotal))) %>%
+  filter(PercentOfTotal > 0.00375)
+
+joinedTableUniques$PercentOfTotal <- joinedTableUniques$PercentOfTotal * 100
+
+```
+
+```{r IndividualStations, message=FALSE, warning = FALSE}
+
+ggplot(joinedTableUniques, aes(x = reorder(smonName, PercentOfTotal), y = PercentOfTotal)) + 
+  geom_col(fill = "blue") + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  xlab(" ") + 
+  ylab("Percent of Citi Bike trips") + 
+  ggtitle("Most popular Citi Bike stations in 2017")
+
+# impact: we can tell the Citi Bike stations are well spread out. There aren't any stations that are excessively impacted, although there are some lesser used ones.
+
 ```
 
 
@@ -134,12 +151,13 @@ bike_crashes_tidy <- nyc_crashes_bike %>%
   dplyr::select(DATE, LONGITUDE, LATITUDE, bike_injuries, bike_deaths) %>%
   dplyr::mutate(FullDate = mdy(DATE)) %>%
   separate(FullDate, sep="-", into = c("year", "month", "day")) %>%
-  filter(year == 2019, LONGITUDE != 0, LATITUDE != 0)
+  filter(LONGITUDE != 0, LATITUDE != 0) %>%
+  filter(year == 2019 | year == 2018 | year == 2017)
 ```
 
 
 ```{r icons, message = FALSE, warning = FALSE}
-bike_icon <- icons(iconUrl = "bike_icon.png", 24, 24)
+bike_icon <- icons(iconUrl = "bike_icon.png", 30, 30)
 ```
 
 
@@ -147,7 +165,7 @@ bike_icon <- icons(iconUrl = "bike_icon.png", 24, 24)
 leaflet(bikeStations) %>%
   addTiles() %>%
   addMarkers(~bikeStations$lon, ~bikeStations$lat, icon = bike_icon) %>%
-  addCircles(~bike_crashes_tidy$LONGITUDE, bike_crashes_tidy$LATITUDE, weight = 2, radius = 40,
+  addCircles(~bike_crashes_tidy$LONGITUDE, bike_crashes_tidy$LATITUDE, weight = 1.5, radius = 20,
              fill = ~bike_crashes_tidy$bike_deaths, color = 'red', stroke = TRUE, fillOpacity = 1)
 ```
 
