@@ -45,18 +45,6 @@ class(db)
 ```
 
 ```{r lookAtTheTables, message=FALSE, warning = FALSE}
-db %>%
-  dbGetQuery("SHOW TABLES;")
-
-db %>%
-  dbGetQuery("SELECT * 
-             FROM station_months
-             LIMIT 0, 100;")
-
-db %>%
-  dbGetQuery("SELECT * 
-             FROM station_summary
-             LIMIT 0, 100;")
 
 bikeStations <- db %>%
   dbGetQuery("SELECT *
@@ -168,6 +156,36 @@ leaflet(bikeStations) %>%
   addMarkers(~bikeStations$lon, ~bikeStations$lat, icon = bike_icon) %>%
   addCircles(~bike_crashes_tidy$LONGITUDE, bike_crashes_tidy$LATITUDE, weight = 1.5, radius = 20,
              fill = ~bike_crashes_tidy$bike_deaths, color = 'red', stroke = TRUE, fillOpacity = 1)
+```
+
+```{r tweets, message = FALSE, warning = FALSE}
+citibikeTweets <- search_tweets("citibike nyc", n = 1000, include_rts = FALSE)
+# you cab only collect a handful of tweets but it refreshes every 15 minutes. There is also a monthly limit.
+```
+
+```{r wrangleYeehaw, message = FALSE, warning = FALSE}
+citibikeSimple <- citibikeTweets %>%
+  select(status_id, screen_name, created_at, text, display_text_width, favorite_count, retweet_count, hashtags) %>%
+  mutate(month = month(created_at, label = TRUE)) %>%
+  mutate(day = day(created_at)) %>%
+  mutate(hour = hour(created_at)) %>%
+  mutate(minuteofHour = (minute(created_at))/(60)) %>%
+  mutate(TimeOfDay = hour+minuteofHour)
+
+```
+
+```{r plot, message = FALSE, warning = FALSE}
+ggplot(citibikeSimple, aes(x = TimeOfDay, y = favorite_count, color = display_text_width)) + 
+  geom_point() + 
+  scale_color_gradient(low="blue", high="red") +
+  theme_classic() +
+  ggtitle("Tweets within the last week that include Citibike and NYC") +
+  xlab("Time in 24-hour time") +
+  ylab('Number of favorites') +
+  labs(color = "Tweet length (characters)")
+
+#this shows how many likes that each tweet recieved. Most likes occured during the rush hour of 4 to 8 pm
+
 ```
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
