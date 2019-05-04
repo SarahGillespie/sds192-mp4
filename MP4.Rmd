@@ -158,7 +158,7 @@ bike_crashes_tidy <- nyc_crashes_bike %>%
 
 
 ```{r icons, message = FALSE, warning = FALSE}
-bike_icon <- icons(iconUrl = "bike_icon.png", 15, 15)
+bike_icon <- icons(iconUrl = "bike_icon.png", 10, 10)
 ```
 
 
