@@ -29,7 +29,6 @@ library(lubridate)
 library(rtweet)
 library(RColorBrewer)
 ```
-```
 
 #package required for network graphic: "GGally". Dependencies: "network", "sna"
 
@@ -44,7 +43,7 @@ db <- dbConnect(MySQL(),
 class(db)
 
 ```
-### Text
+
 ```{r lookAtTheTables, message=FALSE, warning = FALSE}
 db %>%
   dbGetQuery("SHOW TABLES;")
@@ -135,21 +134,11 @@ ggplot(joinedTableUniques, aes(x = reorder(smonName, PercentOfTotal), y = Percen
 ```{r importCarCrashData, message = FALSE, warning = FALSE}
 nyc_crashes <- read_csv("NYPD_Motor_Vehicle_Collisions.csv")
 
+names(nyc_crashes) <- c("DATE", "time", "boro", "zip", "LATITUDE", "LONGITUDE", "LOCATION", "on_st", "cross_st", "off_st", "pers_inj", "pers_killed", "ped_inj", "ped_killed", "bike_injuries", "bike_deaths", "motorists_inj", "motorists_killed", "v1", "v2", "v3", "v4", "v5", "unique_key", "vtype1", "vtype2", "vtype3", "vtype4", "vtype5")
+
 #this CSV should be in the zip file of the project. It will not work if it is not in the zip file.
 ```
 
-```{r renameColumns, message = FALSE, warning = FALSE}
-colnames(nyc_crashes)[4] <- "zip_code"
-colnames(nyc_crashes)[8] <- "street_name"
-colnames(nyc_crashes)[9] <- "cross_street_name"
-colnames(nyc_crashes)[10] <- "off_street_name"
-colnames(nyc_crashes)[15] <- "bike_injuries"
-colnames(nyc_crashes)[16] <- "bike_deaths"
-colnames(nyc_crashes)[11] <- "pers_inj"
-colnames(nyc_crashes)[12] <- "pers_killed"
-colnames(nyc_crashes)[13] <- "ped_inj"
-colnames(nyc_crashes)[14] <- "ped_killed"
-```
 
 ```{r FilterForBikeCrashOnly, message = FALSE, warning = FALSE}
 nyc_crashes_bike <- nyc_crashes %>%
@@ -180,34 +169,6 @@ leaflet(bikeStations) %>%
   addCircles(~bike_crashes_tidy$LONGITUDE, bike_crashes_tidy$LATITUDE, weight = 1.5, radius = 20,
              fill = ~bike_crashes_tidy$bike_deaths, color = 'red', stroke = TRUE, fillOpacity = 1)
 ```
-
-
-```{r tweets, message = FALSE, warning = FALSE}
-citibike <- search_tweets("citibike nyc", n = 1000, include_rts = FALSE)
-# you can only collect a handful of tweets but it refreshes every 15 minutes. DON'T ALWAYS RUN. you might need a twitter account of mine doesn't let you do it
-```
-
-```{r wrangleYeehaw, message = FALSE, warning = FALSE}
-citibikeSimple <- citibike %>%
-  select(status_id, screen_name, created_at, text, display_text_width, favorite_count, retweet_count, hashtags) %>%
-  mutate(month = month(created_at, label = TRUE)) %>%
-  mutate(day = day(created_at)) %>%
-  mutate(hour = hour(created_at))
-
-```
-
-```{r plotTweets, message = FALSE, warning = FALSE}
-ggplot(citibikeSimple, aes(x = hour, y = favorite_count, color = display_text_width)) + 
-  geom_point() + 
-  scale_color_gradient(low="blue", high="red") +
-  theme_classic()
-
-#this shows how many likes that each tweet recieved. Most likes occured during the rush hour of 4 to 8 pm
-
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
-
 
 ^[[Github Repository](https://github.com/SarahGillespie/sds192-mp4)
 ]
