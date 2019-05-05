@@ -55,31 +55,31 @@ bikeStations <- bikeStations %>%
 
 ```
 
-```{r UseNetwork, message=FALSE, warning = FALSE}
-#network of start and ending destinations by user type
-#documentation on networks: https://briatte.github.io/ggnet/ , #https://cran.r-project.org/web/packages/ggnetwork/vignettes/ggnetwork.html
-
-tripsTable <- db %>%
-  dbGetQuery("SELECT * 
+```{r findTheSubscriber, message=FALSE, warning = FALSE}
+MinutesOfSubscriber <- db %>%
+  dbGetQuery("SELECT SUM(duration) AS minutes_ridden, user_type, start_time
               FROM trips
-              LIMIT 0, 100;")
+              GROUP BY MONTH(start_time), user_type;")
 
-network(tripsTable)
+
+# more minutes on the bike leads to more likely to get hit by a car. Customers have 3  billion minutes whereas subscribers have 11 million minutes
+
+#This is a big query and MySQL is super slow at it. There's probably nothing wring with your computer but it did take about 2 minutes to execute on my computer.
 
 ```
 
-#### Questions: let's go at this from a business perspective. Are most bike riders customers or subscribers, age, gender. How can we get more people to ride the bikes? What geographic location do the bikes start and end?
+```{r subscriberVSTotal, message=FALSE, warning = FALSE}
+MinutesOfSubscriberClean <- MinutesOfSubscriber %>%
+  mutate(month = month(start_time)) %>%
+  select(-start_time) %>%
+  filter(user_type != "NA")
 
-```{r joinSQLtables, message=FALSE, warning = FALSE}
-
-joinedTable <- db %>%
-  dbGetQuery("SELECT
-                station_months.station_id AS smonID, station_months.name AS smonName, station_months.num_starts AS smonNumStarts, station_months.num_stops AS smonNumStops, station_summary.num_months AS ssumNumMonths, station_summary.num_starts AS ssumNumStarts, station_summary.num_stops AS ssumNumStops
-              FROM
-                station_months
-                  LEFT JOIN
-                station_summary ON station_months.station_id = station_summary.station_id;")
+ggplot(MinutesOfSubscriberClean, aes(x = month, y = minutes_ridden, col = user_type)) + 
+  geom_line() +
+  scale_y_continuous(name="Minutes", labels = scales::comma) + 
+  ggtitle("Citibike usage in 2017")
 ```
+
 
 ```{r ggplotViaDplyr, message=FALSE, warning = FALSE}
 joinedTableSimple <- db %>%
@@ -119,17 +119,17 @@ ggplot(joinedTableUniques, aes(x = reorder(smonName, PercentOfTotal), y = Percen
 ```
 
 
-```{r importCarCrashData, message = FALSE, warning = FALSE}
-nyc_crashes <- read_csv("NYPD_Motor_Vehicle_Collisions.csv")
+```{r importSmallCrashData, message = FALSE, warning = FALSE}
 
-names(nyc_crashes) <- c("DATE", "time", "boro", "zip", "LATITUDE", "LONGITUDE", "LOCATION", "on_st", "cross_st", "off_st", "pers_inj", "pers_killed", "ped_inj", "ped_killed", "bike_injuries", "bike_deaths", "motorists_inj", "motorists_killed", "v1", "v2", "v3", "v4", "v5", "unique_key", "vtype1", "vtype2", "vtype3", "vtype4", "vtype5")
+nyc_crashes <- read_csv(file = "NYPD_Motor_Vehicle_CollisionsSmall.csv")
 
-#this CSV should be in the zip file of the project. It will not work if it is not in the zip file.
 ```
 
 
 ```{r FilterForBikeCrashOnly, message = FALSE, warning = FALSE}
 nyc_crashes_bike <- nyc_crashes %>%
+  filter(!is.na(LATITUDE)) %>%
+  filter(!is.na(LONGITUDE)) %>%
   filter(bike_injuries > 0 | bike_deaths > 0) 
   
 ```
@@ -141,7 +141,7 @@ bike_crashes_tidy <- nyc_crashes_bike %>%
   dplyr::mutate(FullDate = mdy(DATE)) %>%
   separate(FullDate, sep="-", into = c("year", "month", "day")) %>%
   filter(LONGITUDE != 0, LATITUDE != 0) %>%
-  filter(year == 2019 | year == 2018 | year == 2017)
+  filter(year == 2018 | year == 2017)
 ```
 
 
@@ -182,7 +182,8 @@ ggplot(citibikeSimple, aes(x = TimeOfDay, y = favorite_count, color = display_te
   ggtitle("Tweets within the last week that include Citibike and NYC") +
   xlab("Time in 24-hour time") +
   ylab('Number of favorites') +
-  labs(color = "Tweet length (characters)")
+  labs(color = "Tweet length (characters)") +
+  theme(axis.title.y = element_text(angle = 0))
 
 #this shows how many likes that each tweet recieved. Most likes occured during the rush hour of 4 to 8 pm
 
