@@ -18,9 +18,6 @@ library(RMySQL)
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
-library(GGally)
-library(network)
-library(sna)
 library(sf)
 library(leaflet)
 library(lwgeom)
@@ -28,9 +25,8 @@ library(wordcountaddin)
 library(lubridate)
 library(rtweet)
 library(RColorBrewer)
+library(ggthemes)
 ```
-
-#package required for network graphic: "GGally". Dependencies: "network", "sna"
 
 ```{r SQLData, message=FALSE, warning = FALSE}
 library(RMySQL)
@@ -76,8 +72,13 @@ MinutesOfSubscriberClean <- MinutesOfSubscriber %>%
 
 ggplot(MinutesOfSubscriberClean, aes(x = month, y = minutes_ridden, col = user_type)) + 
   geom_line() +
-  scale_y_continuous(name="Minutes", labels = scales::comma) + 
-  ggtitle("Citibike usage in 2017")
+  scale_y_continuous(name="Minutes ridden", labels = scales::comma) + 
+  ggtitle("Citibike usage in 2017") +
+  xlab("Month") + 
+  labs(color = "User Type:") +
+  scale_x_continuous(breaks = c(1,2,3,4,5,6,7,8,9,10,11,12), labels = c("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")) +
+  scale_color_manual(values = c("darkslateblue", "red")) + 
+  theme_economist_white()
 ```
 
 
@@ -108,11 +109,13 @@ joinedTableUniques$PercentOfTotal <- joinedTableUniques$PercentOfTotal * 100
 ```{r IndividualStations, message=FALSE, warning = FALSE}
 
 ggplot(joinedTableUniques, aes(x = reorder(smonName, PercentOfTotal), y = PercentOfTotal)) + 
-  geom_col(fill = "blue") + 
-  theme(axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  geom_col(fill = "darkslateblue", width = 0.8, position = position_dodge(width = .9)) + 
+  coord_flip() +
   xlab(" ") + 
   ylab("Percent of Citi Bike trips") + 
-  ggtitle("Most popular Citi Bike stations in 2017")
+  ggtitle("Most popular Citi Bike stations in 2017") +
+  theme_economist_white()  + 
+  theme(axis.text.y=element_text(size=rel(0.5)))
 
 # impact: we can tell the Citi Bike stations are well spread out. There aren't any stations that are excessively impacted, although there are some lesser used ones.
 
@@ -180,10 +183,11 @@ ggplot(citibikeSimple, aes(x = TimeOfDay, y = favorite_count, color = display_te
   scale_color_gradient(low="blue", high="red") +
   theme_classic() +
   ggtitle("Tweets within the last week that include Citibike and NYC") +
-  xlab("Time in 24-hour time") +
+  xlab("Hour of day") +
   ylab('Number of favorites') +
   labs(color = "Tweet length (characters)") +
-  theme(axis.title.y = element_text(angle = 0))
+  theme(axis.title.y = element_text(angle = 0)) +
+  theme_economist_white()
 
 #this shows how many likes that each tweet recieved. Most likes occured during the rush hour of 4 to 8 pm
 
